@@ -22,7 +22,7 @@ cp Resources/Info.plist "$TASK_APP/Contents/Info.plist"
 /usr/bin/codesign --force --sign - --timestamp=none "$TASK_APP"
 /usr/bin/codesign --verify --deep --strict "$TASK_APP"
 for TASK_ARCH in arm64 x86_64; do
-    /usr/bin/lipo -verify_arch "$TASK_ARCH" "$TASK_APP/Contents/MacOS/AppDual"
+    /usr/bin/lipo "$TASK_APP/Contents/MacOS/AppDual" -verify_arch "$TASK_ARCH"
 done
 
 # Only generated deliverables inside this project's dist directory are replaced.

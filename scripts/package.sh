@@ -9,7 +9,7 @@ TASK_APP_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionStrin
 [[ "$TASK_APP_VERSION" == "$TASK_VERSION" ]] || { echo 'Build the current version before packaging' >&2; exit 1; }
 /usr/bin/codesign --verify --deep --strict "$TASK_APP"
 for TASK_ARCH in arm64 x86_64; do
-    /usr/bin/lipo -verify_arch "$TASK_ARCH" "$TASK_APP/Contents/MacOS/AppDual"
+    /usr/bin/lipo "$TASK_APP/Contents/MacOS/AppDual" -verify_arch "$TASK_ARCH"
 done
 
 mkdir -p .build
