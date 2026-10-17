@@ -112,7 +112,7 @@ class ReleaseTests(unittest.TestCase):
             release.load_plan(self.dist, self.root)
 
     def test_missing_asset_and_tampering_block_publication(self):
-        path = self.dist / 'README.zh-CN.md'
+        path = self.dist / 'README.md'
         path.write_text('tampered')
         with self.assertRaises(ValueError):
             release.publish(self.github, self.plan, self.dist)
@@ -162,7 +162,7 @@ class ReleaseTests(unittest.TestCase):
     def test_rerun_never_replaces_published_assets(self):
         release.publish(self.github, self.plan, self.dist)
         events = list(self.github.events)
-        (self.dist / 'README.zh-CN.md').write_text('rebuilt documentation')
+        (self.dist / 'README.md').write_text('rebuilt documentation')
         self.update_checksums()
         release.publish(self.github, self.plan, self.dist)
         self.assertEqual(self.github.events, events)

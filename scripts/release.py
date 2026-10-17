@@ -23,7 +23,7 @@ def git_commit(root):
 
 def asset_names(version):
     return [f"TwinSpace-{version}-macos-universal.zip", f"TwinSpace-{version}-source.zip",
-            "README.zh-CN.md", "VALIDATION.zh-CN.md", "SHA256SUMS.txt"]
+            "README.md", "VALIDATION.zh-CN.md", "SHA256SUMS.txt"]
 
 
 def prepare(root, tag, destination, commit):
@@ -54,7 +54,7 @@ def prepare(root, tag, destination, commit):
 下载 `TwinSpace-{version}-macos-universal.zip` 并解压，将“双栖.app”拖到“应用程序”。
 本地签名，未经 Apple 公证；首次打开请按 macOS 的隐私与安全性提示操作。
 
-附件包含安装包、源码包、中文说明、验证记录及 SHA-256 校验值。
+附件包含安装包、源码包、英文 README、验证记录及 SHA-256 校验值。
 功能变化见 [更新日志](https://github.com/{REPOSITORY}/blob/{tag}/CHANGELOG.md)，
 已验证范围见 [验证记录](https://github.com/{REPOSITORY}/blob/{tag}/VALIDATION.md)。
 """

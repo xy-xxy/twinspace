@@ -31,7 +31,7 @@ jobs:
           path: |
             dist/TwinSpace-*-macos-universal.zip
             dist/TwinSpace-*-source.zip
-            dist/README.zh-CN.md
+            dist/README.md
             dist/VALIDATION.zh-CN.md
             dist/SHA256SUMS.txt
           if-no-files-found: error

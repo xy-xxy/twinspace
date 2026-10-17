@@ -5,7 +5,7 @@
 1. 校验标签与应用版本一致。
 2. 运行发布脚本测试和核心功能测试。
 3. 在 macOS 构建 arm64 + x86_64 Universal 应用，进行本地签名与校验。
-4. 生成安装包、源码包、中文使用说明、验证记录及 SHA-256 清单。
+4. 生成安装包、源码包、英文 README、验证记录及 SHA-256 清单。
 5. 在 GitHub 创建草稿，上传并校验全部附件，再公开发布。
 
 使用仓库自带的 `GITHUB_TOKEN`，无需配置个人访问令牌、Apple 开发者证书或公证密钥。仅发布步骤申请 `contents: write`；测试与构建使用只读权限。
@@ -39,7 +39,7 @@ git push origin v0.4.2
 
 - `TwinSpace-X.Y.Z-macos-universal.zip`
 - `TwinSpace-X.Y.Z-source.zip`
-- `README.zh-CN.md`
+- `README.md`
 - `VALIDATION.zh-CN.md`
 - `SHA256SUMS.txt`
 

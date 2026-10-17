@@ -17,7 +17,7 @@ TASK_STAGE="$(mktemp -d "$TASK_ROOT/.build/release.XXXXXX")"
 TASK_RELEASE="$TASK_STAGE/双栖测试版"
 mkdir -p "$TASK_RELEASE"
 /usr/bin/ditto --norsrc --noextattr "$TASK_APP" "$TASK_RELEASE/双栖.app"
-cp README.md "$TASK_RELEASE/使用说明.md"
+cp README.md "$TASK_RELEASE/README.md"
 cp VALIDATION.md "$TASK_RELEASE/验证记录.md"
 cp CHANGELOG.md "$TASK_RELEASE/更新日志.md"
 TASK_BINARY="TwinSpace-$TASK_VERSION-macos-universal.zip"
@@ -30,12 +30,11 @@ mkdir -p "$TASK_SOURCE"
 /usr/bin/tar --exclude='.DS_Store' --exclude='__pycache__' --exclude='*.pyc' -cf - Package.swift README.md VALIDATION.md CHANGELOG.md .gitignore Sources Tests Resources scripts docs .github |
     /usr/bin/tar -xf - -C "$TASK_SOURCE"
 /usr/bin/ditto -c -k --keepParent "$TASK_SOURCE" "dist/$TASK_SOURCE_ARCHIVE"
-cp README.md dist/README.zh-CN.md
+cp README.md dist/README.md
 cp VALIDATION.md dist/VALIDATION.zh-CN.md
-cp README.md dist/使用说明.md
 cp VALIDATION.md dist/验证记录.md
 (
     cd dist
-    /usr/bin/shasum -a 256 "$TASK_BINARY" "$TASK_SOURCE_ARCHIVE" README.zh-CN.md VALIDATION.zh-CN.md > SHA256SUMS.txt
+    /usr/bin/shasum -a 256 "$TASK_BINARY" "$TASK_SOURCE_ARCHIVE" README.md VALIDATION.zh-CN.md > SHA256SUMS.txt
 )
 printf '\nRelease assets: %s/dist/%s\n' "$TASK_ROOT" "$TASK_BINARY"
