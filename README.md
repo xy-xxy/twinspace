@@ -6,7 +6,7 @@ Each application has one managed copy. Copies have a blue **2** badge on their i
 
 ## Download
 
-Get **v0.4.2 Beta** from [Releases](https://github.com/xy-xxy/twinspace/releases).
+Get the latest published version, **v0.4.2 Beta**, from [Releases](https://github.com/xy-xxy/twinspace/releases).
 
 - **TwinSpace-0.4.2-macos-universal.zip** — the macOS app, usage instructions, and validation record.
 - **TwinSpace-0.4.2-source.zip** — source code, tests, and build scripts.
@@ -53,14 +53,20 @@ Import uses snapshots before committing changes. If interrupted, TwinSpace resto
 
 ## Source integrity failures
 
+Development builds starting with **0.4.3** add manual confirmation for source resource differences. The published 0.4.2 build stops on these failures without a continuation option.
+
 A source integrity error means macOS detected added, changed, or missing resources compared with the original application's signature. The alert lists affected paths. **Copy Diagnostics** (`复制诊断`) includes the system's detailed output. Copying has not started at this stage.
 
-Reinstall a version with an intact signature from the original distribution channel, such as the Mac App Store or the developer's website, then retry. You do not need to delete account data. Do not remove the listed library files manually: other components may depend on them. Restoring source integrity does not, by itself, verify that the copied app will work correctly.
+You can reinstall a version with an intact signature from the original distribution channel, such as the Mac App Store or the developer's website, then retry. You do not need to delete account data. Do not remove the listed library files manually: other components may depend on them. Restoring source integrity does not, by itself, verify that the copied app will work correctly.
+
+For reported added, changed, or missing resources, the confirmation dialog shows the application, source path, differences, and selected copy mode. Choose **Confirm and Continue Creating** (`确认后继续创建`) only if you understand and trust the installed application. Cancel leaves the existing copy in place. Confirmation applies to that attempt only; rebuilding requires a new confirmation if verification fails again. The selected data-copy mode and custom source directory are retained.
+
+TwinSpace rechecks the source before continuing. A changed application version, location, or reported difference requires a fresh review. Only the source resource-integrity gate can be acknowledged: copying, signing, clone signature verification, isolation, and startup checks still apply. Tool failures and unsigned applications do not get this continuation option. Diagnostics record the manual acknowledgement without treating the original signature as valid.
 
 ## Compatibility
 
 - macOS 13 or later, with an arm64 + x86_64 Universal binary. Intel hardware and older macOS releases still need interactive testing.
-- TwinSpace selects an isolation strategy based on an app's runtime and storage mechanisms. The original signature must be intact, and bundled resources must not link outside the application.
+- TwinSpace selects an isolation strategy based on an app's runtime and storage mechanisms. Source resource-integrity failures stop creation unless explicitly acknowledged for that attempt in builds that support manual confirmation. Bundled resources must not link outside the application.
 - Not every `.app` can run as an independent copy. Custom storage, single-instance restrictions, fixed local ports, vendor signature checks, and restricted entitlements can affect compatibility.
 - Startup checks verify the launched location and process state, and check separate data locations where applicable. A visible window, running process, or existing directory does not prove that login or all application features work.
 - Copies use local signatures. Keychain access, extensions, notifications, audio/video, and automatic updates may need separate testing. Update the original application first, then rebuild its copy.

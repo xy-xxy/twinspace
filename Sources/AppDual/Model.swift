@@ -3,6 +3,16 @@ import AppKit
 import UniformTypeIdentifiers
 import DualCore
 
+struct SourceSignatureConfirmation: Identifiable {
+    let id = UUID()
+    let source: AppDescriptor
+    let destination: URL
+    let failure: SourceSignatureFailure
+    let repair: Bool
+    let dataPolicy: DataCopyPolicy
+    let sourceDataDirectory: URL?
+}
+
 @MainActor
 final class AppModel: ObservableObject {
     static var appVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "开发版" }
@@ -12,6 +22,7 @@ final class AppModel: ObservableObject {
     @Published var fraction: Double = 0
     @Published var phase = "准备就绪"
     @Published var errorText: String?
+    @Published var signatureConfirmation: SourceSignatureConfirmation?
     @Published var notices: [String: String] = [:]
     @Published var diagnostics = ""
     @Published var refreshTick = 0
@@ -109,12 +120,15 @@ final class AppModel: ObservableObject {
         }
     }
 
-    func openClone(repair: Bool = false, dataPolicy: DataCopyPolicy = .applicationOnly, sourceDataDirectory: URL? = nil) {
+    func openClone(repair: Bool = false, dataPolicy: DataCopyPolicy = .applicationOnly, sourceDataDirectory: URL? = nil,
+                   sourceSignatureApproval: SourceSignatureApproval? = nil) {
         guard !busy, let source, let cloneURL, let selectedID else { return }
         if repair && cloneRunning {
             report(DualError.message("请先从副本菜单退出应用，再点击修复；不会强制结束它。")); return
         }
         busy = true; errorText = nil; fraction = 0; phase = "检查副本"
+        signatureConfirmation = nil
+        diagnostics = sourceSignatureApproval?.diagnostics ?? ""
         notices.removeValue(forKey: selectedID)
         task = Task { [self] in
             defer { busy = false; work = nil }
@@ -129,6 +143,7 @@ final class AppModel: ObservableObject {
                             dbxSourceDirectory: Compatibility.isAdaptedDBX(source) ? sourceDataDirectory : nil,
                             browserSourceDirectory: source.isChromiumBrowser ? sourceDataDirectory : nil,
                             electronSourceDirectory: source.isElectron ? sourceDataDirectory : nil,
+                            sourceSignatureApproval: sourceSignatureApproval,
                             isRunning: RunningApps.isRunning) { value, label in
                             Task { @MainActor [weak self] in
                                 self?.fraction = value; self?.phase = label
@@ -171,13 +186,39 @@ final class AppModel: ObservableObject {
                 notices[selectedID] = (mode == .chromiumProfile || mode == .electronProfile) ? "启动及独立数据目录检查通过 · 登录待验证" : "启动观察通过 · \(validationNote)"
             } catch is CancellationError {
                 notices[selectedID] = "操作已取消 · 如有中断的数据复制，下次打开前会恢复备份"
+            } catch let failure as SourceSignatureFailure where failure.allowsManualConfirmation {
+                diagnostics = failure.diagnostics
+                if Task.isCancelled {
+                    notices[selectedID] = "操作已取消 · 原版完整性校验未通过"
+                } else {
+                    notices[selectedID] = "原版完整性未通过 · 等待手动确认"
+                    signatureConfirmation = SourceSignatureConfirmation(source: source, destination: cloneURL,
+                        failure: failure, repair: repair, dataPolicy: dataPolicy, sourceDataDirectory: sourceDataDirectory)
+                }
             } catch {
                 if error is LaunchFailure { notices[selectedID] = "副本启动失败 · 请重建后重试" }
                 if error is SourceSignatureFailure { notices[selectedID] = "原版完整性校验未通过 · 本次未创建副本" }
-                report(error)
+                report(error, sourceWarning: sourceSignatureApproval?.diagnostics)
             }
             refreshTick += 1
         }
+    }
+
+    func confirmSourceSignatureAndContinue() {
+        guard !busy, let pending = signatureConfirmation else { return }
+        signatureConfirmation = nil
+        guard selectedID == pending.source.bundleID, source == pending.source, cloneURL == pending.destination else {
+            report(DualError.message("所选应用或原版版本已变化，请重新创建并检查最新差异。")); return
+        }
+        openClone(repair: pending.repair, dataPolicy: pending.dataPolicy, sourceDataDirectory: pending.sourceDataDirectory,
+                  sourceSignatureApproval: SourceSignatureApproval(source: pending.source, failure: pending.failure))
+    }
+
+    func cancelSourceSignatureConfirmation() {
+        if let pending = signatureConfirmation {
+            notices[pending.source.bundleID] = "已取消创建 · 原版完整性校验未通过"
+        }
+        signatureConfirmation = nil
     }
 
     func retry() {
@@ -210,8 +251,9 @@ final class AppModel: ObservableObject {
         let privacyFiltered = text.replacingOccurrences(of: FileManager.default.homeDirectoryForCurrentUser.path, with: "~")
         NSPasteboard.general.clearContents(); NSPasteboard.general.setString(privacyFiltered, forType: .string)
     }
-    private func report(_ error: Error) {
+    private func report(_ error: Error, sourceWarning: String? = nil) {
         errorText = error.localizedDescription
         diagnostics = (error as? SourceSignatureFailure)?.diagnostics ?? error.localizedDescription
+        if let sourceWarning { diagnostics = "本次操作失败：\n" + diagnostics + "\n\n" + sourceWarning }
     }
 }

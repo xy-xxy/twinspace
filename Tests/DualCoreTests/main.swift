@@ -739,6 +739,134 @@ final class DualCoreTests {
         catch is CancellationError {} catch { expectTrue(false) }
         expectFalse(commands.copied)
     }
+
+    private func resourceFailure(_ source: AppDescriptor, path: String = "Contents/Resources/changed.txt") -> SourceSignatureFailure {
+        SourceSignatureFailure(name: source.name, sourceURL: source.url, status: 1,
+            output: "\(source.url.path): a sealed resource is missing or invalid\nfile modified: \(source.url.path)/\(path)")
+    }
+
+    func testConfirmedSourceStillSignsAndVerifiesCloneAndDoesNotPersistApproval() throws {
+        let source = try fixture(), destination = root.appendingPathComponent("Copies/Clone.app")
+        let failure = resourceFailure(source), commands = MockCommands(source: source)
+        let before = try Data(contentsOf: source.url.appendingPathComponent("Contents/Info.plist"))
+        commands.sourceVerificationOutput = "--validated:helper-b\n" + failure.output + "\n--prepared:helper-a\n"
+        let builder = CloneBuilder(commands: commands)
+        _ = try builder.build(source: source, destination: destination,
+            sourceSignatureApproval: SourceSignatureApproval(source: source, failure: failure), dataHome: root)
+        expectTrue(commands.copied); expectEqual(commands.cloneVerifications, 1)
+        expectFalse(commands.entitlementsByPath.isEmpty)
+        expectEqual(try Data(contentsOf: source.url.appendingPathComponent("Contents/Info.plist")), before)
+        let manifest = try Data(contentsOf: destination.appendingPathComponent(CloneManifest.relativePath))
+        commands.copied = false
+        do { _ = try builder.build(source: source, destination: destination, dataHome: root); expectTrue(false) }
+        catch is SourceSignatureFailure {} catch { expectTrue(false) }
+        expectFalse(commands.copied)
+        expectEqual(try Data(contentsOf: destination.appendingPathComponent(CloneManifest.relativePath)), manifest)
+    }
+
+    func testSignatureApprovalIsBoundToSourceAndReportedDifferences() throws {
+        let source = try fixture(), failure = resourceFailure(source), commands = MockCommands(source: source)
+        let approval = SourceSignatureApproval(source: source, failure: failure)
+        commands.sourceVerificationOutput = resourceFailure(source, path: "Contents/Resources/another.txt").output
+        expectThrows(try SourceSignature.verify(source, approval: approval, commands: commands))
+        commands.sourceVerificationOutput = "internal error"
+        expectThrows(try SourceSignature.verify(source, approval: approval, commands: commands))
+        let arbitrary = SourceSignatureFailure(name: source.name, sourceURL: source.url, status: 1, output: "internal error")
+        expectFalse(arbitrary.allowsManualConfirmation)
+        expectThrows(try SourceSignature.verify(source, approval: SourceSignatureApproval(source: source, failure: arbitrary), commands: commands))
+        let next = try fixture(build: "2")
+        commands.sourceVerificationOutput = failure.output
+        expectThrows(try SourceSignature.verify(next, approval: approval, commands: commands))
+        expectThrows(try SourceSignature.verify(source, approval: approval, commands: commands))
+        let moved = root.appendingPathComponent("Moved.app")
+        try FileManager.default.copyItem(at: next.url, to: moved)
+        let other = try AppDescriptor.inspect(moved), otherCommands = MockCommands(source: try AppDescriptor.inspect(moved))
+        otherCommands.sourceVerificationOutput = failure.output
+        expectThrows(try SourceSignature.verify(other, approval: approval, commands: otherCommands))
+        expectFalse(commands.copied); expectFalse(otherCommands.copied)
+    }
+
+    func testConfirmedSourceStillPropagatesCancellation() throws {
+        let source = try fixture(), commands = MockCommands(source: try AppDescriptor.inspect(root.appendingPathComponent("Original.app")))
+        commands.cancelSourceVerification = true
+        do {
+            try SourceSignature.verify(source, approval: SourceSignatureApproval(source: source, failure: resourceFailure(source)), commands: commands)
+            expectTrue(false)
+        } catch is CancellationError {} catch { expectTrue(false) }
+        expectFalse(commands.copied)
+    }
+
+    func testConfirmedBuildFailuresKeepExistingCloneAndData() throws {
+        let source = try fixture(), destination = root.appendingPathComponent("Copies/Clone.app")
+        _ = try CloneBuilder(commands: MockCommands(source: source)).build(source: source, destination: destination, dataHome: root)
+        let manifest = try Data(contentsOf: destination.appendingPathComponent(CloneManifest.relativePath))
+        let profile = root.appendingPathComponent("Library/Containers/\(source.cloneID)/Data")
+        try FileManager.default.createDirectory(at: profile, withIntermediateDirectories: true)
+        try Data("retained-account-fixture".utf8).write(to: profile.appendingPathComponent("config"))
+        for failSigning in [true, false] {
+            let commands = MockCommands(source: source), failure = resourceFailure(source)
+            commands.sourceVerificationOutput = failure.output
+            commands.failSigning = failSigning; commands.failCloneVerification = !failSigning
+            expectThrows(try CloneBuilder(commands: commands).build(source: source, destination: destination,
+                dataPolicy: .includeExistingData, sourceSignatureApproval: SourceSignatureApproval(source: source, failure: failure), dataHome: root))
+            expectEqual(try Data(contentsOf: destination.appendingPathComponent(CloneManifest.relativePath)), manifest)
+            expectEqual(try String(contentsOf: profile.appendingPathComponent("config")), "retained-account-fixture")
+        }
+    }
+
+    func testSignatureApprovalDoesNotAllowExternalResources() throws {
+        let source = try fixture(), commands = MockCommands(source: try AppDescriptor.inspect(root.appendingPathComponent("Original.app")))
+        let failure = resourceFailure(source)
+        commands.sourceVerificationOutput = failure.output
+        try FileManager.default.createSymbolicLink(at: source.url.appendingPathComponent("Contents/Resources/external"), withDestinationURL: root)
+        expectThrows(try CloneBuilder(commands: commands).build(source: source, destination: root.appendingPathComponent("Copy.app"),
+            sourceSignatureApproval: SourceSignatureApproval(source: source, failure: failure), dataHome: root))
+        expectFalse(commands.copied)
+    }
+
+    func testConfirmedBuildHonorsExistingDataCopyMode() throws {
+        let source = try fixture(), home = root.appendingPathComponent("home")
+        let original = home.appendingPathComponent("Library/Containers/\(source.bundleID)/Data")
+        let copied = home.appendingPathComponent("Library/Containers/\(source.cloneID)/Data")
+        for folder in [original, copied] { try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true) }
+        try Data("source-config".utf8).write(to: original.appendingPathComponent("config"))
+        try Data("old-copy-config".utf8).write(to: copied.appendingPathComponent("config"))
+        let destination = home.appendingPathComponent("Applications/Copy.app")
+        let commands = MockCommands(source: source), failure = resourceFailure(source)
+        commands.sourceVerificationOutput = failure.output
+        _ = try CloneBuilder(commands: commands).build(source: source, destination: destination, dataPolicy: .includeExistingData,
+            sourceSignatureApproval: SourceSignatureApproval(source: source, failure: failure), dataHome: home)
+        expectEqual(try String(contentsOf: copied.appendingPathComponent("config")), "source-config")
+        expectEqual(try String(contentsOf: original.appendingPathComponent("config")), "source-config")
+        try Data("independent-copy".utf8).write(to: copied.appendingPathComponent("config"))
+        expectEqual(try String(contentsOf: original.appendingPathComponent("config")), "source-config")
+        expectTrue(try CloneManifest.read(at: destination).isCurrent(for: source))
+    }
+
+    func testRealConfirmedResourceChangeCreatesStrictlySignedClone() throws {
+        let original = try fixture(), fm = FileManager.default
+        let binary = original.url.appendingPathComponent("Contents/MacOS/Chat")
+        try fm.removeItem(at: binary); try fm.copyItem(at: URL(fileURLWithPath: "/usr/bin/true"), to: binary)
+        let permissions = root.appendingPathComponent("source-entitlements.plist")
+        try PropertyListSerialization.data(fromPropertyList: ["com.apple.security.app-sandbox": true], format: .xml, options: 0).write(to: permissions)
+        let resource = original.url.appendingPathComponent("Contents/Resources/changed.txt")
+        try Data("before".utf8).write(to: resource)
+        try SystemCommands().checked("/usr/bin/codesign", ["--force", "--sign", "-", "--timestamp=none", "--entitlements", permissions.path, original.url.path])
+        let source = try AppDescriptor.inspect(original.url)
+        try Data("after".utf8).write(to: resource)
+        let sourceBinary = try Data(contentsOf: binary)
+        let destination = root.appendingPathComponent("Copies/Clone.app")
+        do { try SourceSignature.verify(source); expectTrue(false) }
+        catch let failure as SourceSignatureFailure {
+            _ = try CloneBuilder().build(source: source, destination: destination,
+                sourceSignatureApproval: SourceSignatureApproval(source: source, failure: failure), dataHome: root)
+            try CloneBuilder().verify(destination)
+            expectEqual(try String(contentsOf: destination.appendingPathComponent("Contents/Resources/changed.txt")), "after")
+        }
+        expectEqual(try Data(contentsOf: binary), sourceBinary)
+        expectEqual(try String(contentsOf: resource), "after")
+        expectThrows(try SourceSignature.verify(source))
+    }
     func testRealSignedSourceReportsAddedModifiedAndMissingResources() throws {
         let original = try fixture(), fm = FileManager.default
         let binary = original.url.appendingPathComponent("Contents/MacOS/Chat")
@@ -765,6 +893,7 @@ final class DualCoreTests {
 private final class MockCommands: CommandRunning {
     let source: AppDescriptor
     var failSigning = false, failCopy = false, sandboxed = true, copied = false
+    var failCloneVerification = false, cloneVerifications = 0
     var entitlementsByPath: [String: [String: Any]] = [:]
     var signedFrameworkVersions: [String] = []
     var frameworkRequirements: [String] = []
@@ -776,6 +905,10 @@ private final class MockCommands: CommandRunning {
         if args.contains("--verify"), args.last == source.url.path {
             if cancelSourceVerification { throw CancellationError() }
             if let output = sourceVerificationOutput { return CommandResult(status: 1, output: output) }
+        }
+        if args.contains("--verify"), args.last != source.url.path {
+            cloneVerifications += 1
+            if failCloneVerification { return CommandResult(status: 1, output: "fixture clone signature failure") }
         }
         if executable.hasSuffix("ditto") {
             let destination = URL(fileURLWithPath: args.last!)
@@ -823,6 +956,13 @@ private func expectThrows<T>(_ expression: @autoclosure () throws -> T, file: St
 }
 
 let checks: [(String, (DualCoreTests) -> () throws -> Void)] = [
+    ("testConfirmedSourceStillSignsAndVerifiesCloneAndDoesNotPersistApproval", DualCoreTests.testConfirmedSourceStillSignsAndVerifiesCloneAndDoesNotPersistApproval),
+    ("testSignatureApprovalIsBoundToSourceAndReportedDifferences", DualCoreTests.testSignatureApprovalIsBoundToSourceAndReportedDifferences),
+    ("testConfirmedSourceStillPropagatesCancellation", DualCoreTests.testConfirmedSourceStillPropagatesCancellation),
+    ("testConfirmedBuildFailuresKeepExistingCloneAndData", DualCoreTests.testConfirmedBuildFailuresKeepExistingCloneAndData),
+    ("testSignatureApprovalDoesNotAllowExternalResources", DualCoreTests.testSignatureApprovalDoesNotAllowExternalResources),
+    ("testConfirmedBuildHonorsExistingDataCopyMode", DualCoreTests.testConfirmedBuildHonorsExistingDataCopyMode),
+    ("testRealConfirmedResourceChangeCreatesStrictlySignedClone", DualCoreTests.testRealConfirmedResourceChangeCreatesStrictlySignedClone),
     ("testSourceSignatureFailureExplainsResourceChanges", DualCoreTests.testSourceSignatureFailureExplainsResourceChanges),
     ("testSourceSignatureFailureDistinguishesUnsignedAndUnknownErrors", DualCoreTests.testSourceSignatureFailureDistinguishesUnsignedAndUnknownErrors),
     ("testInvalidSourceStopsBeforeCopyAndKeepsExistingClone", DualCoreTests.testInvalidSourceStopsBeforeCopyAndKeepsExistingClone),

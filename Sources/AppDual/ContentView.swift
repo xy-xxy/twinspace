@@ -40,6 +40,9 @@ struct ContentView: View {
                 }
             }
         }
+        .sheet(item: Binding(get: { model.signatureConfirmation }, set: { if $0 == nil { model.cancelSourceSignatureConfirmation() } })) { confirmation in
+            SourceSignatureConfirmationView(model: model, confirmation: confirmation)
+        }
         .alert("操作未完成", isPresented: Binding(get: { model.errorText != nil }, set: { if !$0 { model.errorText = nil } })) {
             Button("复制诊断") { model.copyDiagnostics(); model.errorText = nil }
             Button("知道了", role: .cancel) { model.errorText = nil }

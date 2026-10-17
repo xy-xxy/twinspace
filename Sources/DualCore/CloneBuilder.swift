@@ -66,6 +66,7 @@ public struct CloneBuilder {
     public func build(source: AppDescriptor, destination: URL,
                       dataPolicy: DataCopyPolicy = .applicationOnly, dbxSourceDirectory: URL? = nil, browserSourceDirectory: URL? = nil,
                       electronSourceDirectory: URL? = nil,
+                      sourceSignatureApproval: SourceSignatureApproval? = nil,
                       dataHome: URL = FileManager.default.homeDirectoryForCurrentUser,
                       isRunning: @escaping (URL) -> Bool = { _ in false },
                       progress: (Double, String) -> Void = { _, _ in }) throws -> CloneManifest {
@@ -83,7 +84,7 @@ public struct CloneBuilder {
         try DataCopyTransaction.recoverIfNeeded(source: source, appDestination: destination, home: dataHome, isRunning: isRunning, acquireLock: false)
         try validateDestination(destination, source: source)
         progress(0.02, "检查原版应用完整性")
-        try SourceSignature.verify(source, commands: commands)
+        try SourceSignature.verify(source, approval: sourceSignatureApproval, commands: commands)
         let originalEntitlements = try entitlements(at: source.url)
         let mode = try Compatibility.mode(for: source, entitlements: originalEntitlements)
         if mode == .chromiumProfile { try ChromiumProfile.ensureDirectory(for: source, home: dataHome) }
