@@ -6,32 +6,31 @@ Each application has one managed copy. Copies have a blue **2** badge on their i
 
 ## Download
 
-Get the latest published version, **v0.4.2 Beta**, from [Releases](https://github.com/xy-xxy/twinspace/releases).
+Get **v0.4.3 Beta** from [Releases](https://github.com/xy-xxy/twinspace/releases/tag/v0.4.3).
 
-- **TwinSpace-0.4.2-macos-universal.zip** — the macOS app, usage instructions, and validation record.
-- **TwinSpace-0.4.2-source.zip** — source code, tests, and build scripts.
+- **TwinSpace-0.4.3-macos-universal.dmg** — the recommended drag-to-install disk image, including an Applications shortcut and documentation.
+- **TwinSpace-0.4.3-macos-universal.zip** — the macOS app, usage instructions, and validation record.
+- **TwinSpace-0.4.3-source.zip** — source code, tests, and build scripts.
 - **README.md** — this English guide.
 - **VALIDATION.zh-CN.md** — validation details in Chinese.
 - **SHA256SUMS.txt** — SHA-256 checksums for the release files.
 
 Requires macOS 13 or later. The Universal binary includes Apple Silicon and Intel architectures. Interactive testing was performed on Apple Silicon with macOS 27.0.1; Intel hardware has not yet been verified. The app uses an ad-hoc local signature and is not notarized by Apple.
 
-This version uses the TwinSpace name throughout the app and installer, and provides English release notes. Existing application entries, copy identities, and data locations are preserved. See the [changelog](CHANGELOG.md) for previous updates.
-
-Development builds starting with **0.4.3** also produce `TwinSpace-X.Y.Z-macos-universal.dmg`. Open the DMG, drag `TwinSpace.app` onto the **Applications** shortcut, then eject the image and open the app from Applications. The current local build is `TwinSpace-0.4.3-macos-universal.dmg`; the published 0.4.2 release remains available as a ZIP.
+This version adds manual confirmation for source resource-integrity differences and a drag-to-install DMG. Existing application entries, copy identities, and data locations are preserved. See the [changelog](CHANGELOG.md) for previous updates.
 
 ## Installation and use
 
 The app currently has a Chinese interface. Button labels below include English translations.
 
-1. Download and extract `TwinSpace-0.4.2-macos-universal.zip`, then drag `TwinSpace.app` into Applications. When building from source, the app is available at `dist/TwinSpace.app`.
+1. Quit any running version of TwinSpace. Open `TwinSpace-0.4.3-macos-universal.dmg`, drag `TwinSpace.app` onto the **Applications** shortcut, then eject the image and open the app from Applications. You can also extract the ZIP installer and drag its app into Applications. When building from source, the app is available at `dist/TwinSpace.app`.
 2. This is an **ad-hoc signed, unnotarized beta**. macOS may block the first launch of a downloaded copy. After checking its source, follow the system's instructions in **System Settings → Privacy & Security**. You do not need to disable Gatekeeper or SIP.
 3. Click **Add App** (`添加应用…`) and select the original `.app`. You can select multiple apps. Selecting a new location for an existing bundle identifier updates its entry.
 4. Click **Create and Open Copy** (`创建并打开副本`) and choose what to copy. **Application Only** (`仅复制应用程序`) is the default: it preserves an existing copy's data and starts with an empty data space when creating a copy for the first time. Allow space for the application plus approximately 512 MB; importing data also requires space for snapshots and backups.
 5. Sign in separately inside the copied app if needed. TwinSpace observes startup for 20 seconds, but successful startup does not verify account login. It does not inspect account details, messages, or login credentials.
 6. After updating the original app, select **Rebuild Copy** (`重建副本…`) and choose **Application Only** to update the program while preserving its data. Rebuilding also opens the copy. Its identity and data locations remain stable.
 
-When upgrading from an earlier release, quit TwinSpace and remove the previous manager app from Applications before installing `TwinSpace.app`. Removing the manager bundle preserves your application list, managed copies, and their data.
+When upgrading from an earlier release, quit TwinSpace before replacing the manager app. If the previous manager used a different name, remove that old manager bundle from Applications before installing `TwinSpace.app`. Removing the manager bundle preserves your application list, managed copies, and their data.
 
 TwinSpace manages at most one copy per application. Opening a running copy activates its existing window. Cancelling a build removes that build's temporary files; cancelling startup observation does not close the application.
 
@@ -55,7 +54,7 @@ Import uses snapshots before committing changes. If interrupted, TwinSpace resto
 
 ## Source integrity failures
 
-Development builds starting with **0.4.3** add manual confirmation for source resource differences. The published 0.4.2 build stops on these failures without a continuation option.
+**0.4.3** adds manual confirmation for source resource differences. Creation pauses until you explicitly confirm or cancel.
 
 A source integrity error means macOS detected added, changed, or missing resources compared with the original application's signature. The alert lists affected paths. **Copy Diagnostics** (`复制诊断`) includes the system's detailed output. Copying has not started at this stage.
 
