@@ -29,6 +29,7 @@ jobs:
         with:
           name: TwinSpace-macos-universal
           path: |
+            dist/TwinSpace-*-macos-universal.dmg
             dist/TwinSpace-*-macos-universal.zip
             dist/TwinSpace-*-source.zip
             dist/README.md

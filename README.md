@@ -18,6 +18,8 @@ Requires macOS 13 or later. The Universal binary includes Apple Silicon and Inte
 
 This version uses the TwinSpace name throughout the app and installer, and provides English release notes. Existing application entries, copy identities, and data locations are preserved. See the [changelog](CHANGELOG.md) for previous updates.
 
+Development builds starting with **0.4.3** also produce `TwinSpace-X.Y.Z-macos-universal.dmg`. Open the DMG, drag `TwinSpace.app` onto the **Applications** shortcut, then eject the image and open the app from Applications. The current local build is `TwinSpace-0.4.3-macos-universal.dmg`; the published 0.4.2 release remains available as a ZIP.
+
 ## Installation and use
 
 The app currently has a Chinese interface. Button labels below include English translations.
@@ -102,7 +104,9 @@ Requires macOS and Swift 5.9 or later through Apple Command Line Tools or Xcode.
 open dist/TwinSpace.app
 ```
 
-Build output includes the `.app`, installer and source ZIPs, SHA-256 checksums, and documentation. The scripts do not access an Apple developer account or perform notarization.
+Build output includes the `.app`, a drag-to-install DMG, installer and source ZIPs, SHA-256 checksums, and documentation. The DMG includes an Applications shortcut and documentation. Packaging mounts it read-only to verify the app identity, version, signature, both architectures, and installation shortcut before replacing the output file. The scripts do not access an Apple developer account or perform notarization.
+
+To repackage an existing build without recompiling, run `./scripts/package.sh`. DMG creation uses the macOS disk image tools and Python 3, with no additional packages.
 
 The diagnostic CLI uses the same build engine as the GUI. Replace the example paths with the actual original and copied app locations:
 

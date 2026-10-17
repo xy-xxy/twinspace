@@ -23,7 +23,7 @@ def git_commit(root):
 
 def asset_names(version):
     return [f"TwinSpace-{version}-macos-universal.zip", f"TwinSpace-{version}-source.zip",
-            "README.md", "VALIDATION.zh-CN.md", "SHA256SUMS.txt"]
+            "README.md", "VALIDATION.zh-CN.md", f"TwinSpace-{version}-macos-universal.dmg", "SHA256SUMS.txt"]
 
 
 def prepare(root, tag, destination, commit):
@@ -52,13 +52,14 @@ def prepare(root, tag, destination, commit):
 TwinSpace is a native macOS app duplicator. The Universal binary includes Apple Silicon
 and Intel architectures and requires macOS 13 or later.
 
-Download and extract `TwinSpace-{version}-macos-universal.zip`, then drag `TwinSpace.app`
-into Applications. Quit and remove the previous manager app before installing the update;
-your application list, managed copies, and their data are preserved.
+Open `TwinSpace-{version}-macos-universal.dmg` and drag `TwinSpace.app` onto the Applications
+shortcut, then eject the disk image. A ZIP installer is also included. Quit the previous manager
+before updating; remove its old bundle first if it used a different name.
+Your application list, managed copies, and their data are preserved.
 The app uses an ad-hoc local signature and is not notarized by Apple. Follow macOS
 Privacy & Security instructions if the first launch is blocked after checking its source.
 
-Assets include the installer, source code, English README, Chinese validation record,
+Assets include DMG and ZIP installers, source code, English README, Chinese validation record,
 and SHA-256 checksums. The app interface remains Chinese.
 See the [changelog](https://github.com/{REPOSITORY}/blob/{tag}/CHANGELOG.md) for changes
 and the [validation record](https://github.com/{REPOSITORY}/blob/{tag}/VALIDATION.md)
@@ -108,7 +109,7 @@ def verify_assets(directory, plan):
             raise ValueError("Invalid or duplicate checksum entry.")
         checksums[match[2]] = "sha256:" + match[1]
     if set(checksums) != set(plan["assets"][:-1]):
-        raise ValueError("Checksum manifest must cover exactly the four downloadable files.")
+        raise ValueError("Checksum manifest must cover exactly the downloadable files, including the DMG.")
     for name, expected in checksums.items():
         if digest(directory / name) != expected:
             raise ValueError(f"Checksum mismatch: {name}")
@@ -165,7 +166,7 @@ def verify_remote_tag(github, plan):
 def verify_remote_assets(release, plan, directory=None):
     assets = release.get("assets", [])
     if len(assets) != len(plan["assets"]) or {asset["name"] for asset in assets} != set(plan["assets"]):
-        raise ValueError("Release does not contain exactly the five expected assets.")
+        raise ValueError("Release does not contain exactly the expected assets.")
     for asset in assets:
         if asset["state"] != "uploaded" or asset["size"] <= 0 or not asset.get("digest", "").startswith("sha256:"):
             raise ValueError("Release asset upload is incomplete.")

@@ -5,7 +5,7 @@
 1. 校验标签与应用版本一致。
 2. 运行发布脚本测试和核心功能测试。
 3. 在 macOS 构建 arm64 + x86_64 Universal 应用，进行本地签名与校验。
-4. 生成安装包、源码包、英文 README、验证记录及 SHA-256 清单。
+4. 生成 DMG、ZIP 安装包、源码包、英文 README、验证记录及 SHA-256 清单。DMG 在 macOS 构建阶段只读挂载，校验应用版本、签名、双架构及 Applications 快捷入口后才替换产物。
 5. 在 GitHub 创建草稿，上传并校验全部附件，再公开发布。
 
 使用仓库自带的 `GITHUB_TOKEN`，无需配置个人访问令牌、Apple 开发者证书或公证密钥。仅发布步骤申请 `contents: write`；测试与构建使用只读权限。
@@ -35,15 +35,16 @@ git push origin v0.4.2
 
 ## 附件与验证
 
-每次 Release 包含 5 个附件：
+从当前打包版本起，每次 Release 包含 6 个附件：
 
+- `TwinSpace-X.Y.Z-macos-universal.dmg`
 - `TwinSpace-X.Y.Z-macos-universal.zip`
 - `TwinSpace-X.Y.Z-source.zip`
 - `README.md`
 - `VALIDATION.zh-CN.md`
 - `SHA256SUMS.txt`
 
-公开前检查所有本地校验值、安装包身份与版本、GitHub 上的附件大小及 SHA-256，以及远端标签是否仍指向构建时的提交。源码包排除构建目录、应用数据和 Python 缓存。
+SHA-256 清单覆盖 DMG、两个 ZIP 和两个说明文件。公开前检查所有本地校验值、安装包身份与版本、GitHub 上的附件大小及 SHA-256，以及远端标签是否仍指向构建时的提交。源码包排除构建目录、应用数据和 Python 缓存。
 
 当前仍是本地签名，没有 Apple 公证；自动构建成功不代表双账号登录或各应用全部业务功能通过。实际范围以 `VALIDATION.md` 为准。
 

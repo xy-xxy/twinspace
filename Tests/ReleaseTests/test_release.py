@@ -74,6 +74,7 @@ class ReleaseTests(unittest.TestCase):
             z.writestr('source/Package.swift', '// fixture')
         for name in self.plan['assets'][2:4]:
             (self.dist / name).write_text('fixture documentation')
+        (self.dist / self.plan['assets'][4]).write_bytes(b'fixture disk image; mounted verification runs in macOS packaging')
         self.update_checksums()
         self.github = FakeGitHub(self.plan, self.dist)
 
@@ -97,6 +98,7 @@ class ReleaseTests(unittest.TestCase):
         self.assertIn('v1.0.0-rc.1', notes)
         self.assertIn('not notarized by Apple', notes)
         self.assertIn('TwinSpace.app', notes)
+        self.assertIn('macos-universal.dmg', notes)
         self.assertNotRegex(notes, r'[\u3400-\u9fff]')
         self.assertIn(COMMIT, notes)
 
@@ -137,6 +139,28 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             release.verify_assets(self.dist, self.plan)
 
+    def test_missing_or_modified_disk_image_blocks_publication(self):
+        path = self.dist / self.plan['assets'][4]
+        self.assertEqual(path.suffix, '.dmg')
+        path.write_bytes(b'changed disk image')
+        with self.assertRaisesRegex(ValueError, 'Checksum mismatch'):
+            release.publish(self.github, self.plan, self.dist)
+        path.unlink()
+        with self.assertRaisesRegex(ValueError, 'Missing or invalid release asset'):
+            release.publish(self.github, self.plan, self.dist)
+        self.assertEqual(self.github.events, [])
+
+    def test_disk_image_requires_a_checksum_and_upload(self):
+        manifest = self.dist / 'SHA256SUMS.txt'
+        manifest.write_text(''.join(line + '\n' for line in manifest.read_text().splitlines() if not line.endswith('.dmg')))
+        with self.assertRaisesRegex(ValueError, 'including the DMG'):
+            release.verify_assets(self.dist, self.plan)
+        self.update_checksums()
+        release.publish(self.github, self.plan, self.dist)
+        self.github.existing['assets'] = [a for a in self.github.existing['assets'] if not a['name'].endswith('.dmg')]
+        with self.assertRaisesRegex(ValueError, 'expected assets'):
+            release.verify_remote_assets(self.github.existing, self.plan, self.dist)
+
     def test_installer_rejects_stale_branding_even_with_updated_checksums(self):
         cases = [('OldName.app', self.info),
                  ('TwinSpace.app', dict(self.info, CFBundleName='OldName')),
@@ -156,6 +180,7 @@ class ReleaseTests(unittest.TestCase):
         self.assertFalse(self.github.existing['draft'])
         self.assertEqual(self.github.existing['make_latest'], 'false')
         self.assertEqual(self.github.existing['name'], 'TwinSpace v0.4.2 Beta')
+        self.assertEqual(len(self.github.existing['assets']), 6)
 
     def test_failed_upload_leaves_draft_and_retry_completes(self):
         self.github.fail_upload = True

@@ -21,8 +21,10 @@ cp README.md "$TASK_RELEASE/README.md"
 cp VALIDATION.md "$TASK_RELEASE/VALIDATION.md"
 cp CHANGELOG.md "$TASK_RELEASE/CHANGELOG.md"
 TASK_BINARY="TwinSpace-$TASK_VERSION-macos-universal.zip"
+TASK_DMG="TwinSpace-$TASK_VERSION-macos-universal.dmg"
 TASK_SOURCE_ARCHIVE="TwinSpace-$TASK_VERSION-source.zip"
 /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$TASK_RELEASE" "dist/$TASK_BINARY"
+python3 "$TASK_ROOT/scripts/dmg.py" create --app "$TASK_APP" --image "dist/$TASK_DMG"
 
 # Package only project sources and public documentation, never local build/test data.
 TASK_SOURCE="$TASK_STAGE/TwinSpace-$TASK_VERSION-source"
@@ -34,6 +36,7 @@ cp README.md dist/README.md
 cp VALIDATION.md dist/VALIDATION.zh-CN.md
 (
     cd dist
-    /usr/bin/shasum -a 256 "$TASK_BINARY" "$TASK_SOURCE_ARCHIVE" README.md VALIDATION.zh-CN.md > SHA256SUMS.txt
+    /usr/bin/shasum -a 256 "$TASK_BINARY" "$TASK_SOURCE_ARCHIVE" README.md VALIDATION.zh-CN.md "$TASK_DMG" > SHA256SUMS.txt
 )
 printf '\nRelease assets: %s/dist/%s\n' "$TASK_ROOT" "$TASK_BINARY"
+printf 'Disk image: %s/dist/%s\n' "$TASK_ROOT" "$TASK_DMG"
