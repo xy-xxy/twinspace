@@ -1,0 +1,70 @@
+name: Release
+run-name: ${{ github.event_name == 'push' && format('Release {0}', github.ref_name) || 'Verify release packaging (no publication)' }}
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.event_name != 'push' || github.event.deleted == false
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Validate release version
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: python3 scripts/release.py prepare --tag "$RELEASE_TAG"
+      - name: Test release automation
+        run: python3 -m unittest discover -s Tests/ReleaseTests -v
+      - name: Run core checks
+        run: ./scripts/test.sh
+      - name: Build Universal app and release assets
+        run: ./scripts/build.sh
+      - name: Verify archives and checksums
+        run: python3 scripts/release.py verify
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: release-assets
+          path: |
+            dist/TwinSpace-*-macos-universal.zip
+            dist/TwinSpace-*-source.zip
+            dist/README.zh-CN.md
+            dist/VALIDATION.zh-CN.md
+            dist/SHA256SUMS.txt
+            dist/release-plan.json
+            dist/release-notes.md
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 14
+
+  publish:
+    if: github.event_name == 'push' && github.event.deleted == false && github.repository == 'xy-xxy/twinspace'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: release-assets
+          path: dist
+      - name: Publish verified release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/release.py publish

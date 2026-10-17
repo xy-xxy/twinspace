@@ -2,3 +2,5 @@
 dist/
 .DS_Store
 .swiftpm/
+__pycache__/
+*.py[cod]

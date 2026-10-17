@@ -111,6 +111,12 @@ swift run DualProbe verify /Applications/WeChat.app
 swift run DualProbe observe /Applications/WeChat.app "$HOME/Applications/微信副本.app" 90
 ```
 
+## 自动发布
+
+推送 `vX.Y.Z` 版本标签后，[Release 工作流](https://github.com/xy-xxy/twinspace/actions/workflows/release.yml) 会自动测试、打包、校验并发布到 Releases。标签必须与 `Resources/Info.plist` 的应用版本一致；`0.x` 及带预发布后缀的版本会标记为测试版。
+
+手动运行该工作流只验证打包流程，不发布。版本更新、标签格式、发布说明和失败重试见 [发布指南](docs/RELEASING.md)。Git 提交信息使用英文。
+
 ## 设计参考
 
 曾对照 [WeChatMulti 的签名研究](https://github.com/Wuvomi/WeChatMulti/blob/main/re/clone-verdict.md) 排查微信的沙盒与 Crashpad 命名问题；本项目自行实现复制、权限处理、事务安装、界面和测试，并以本机验证结果为准。应用组机制参考 [Apple 官方文档](https://developer.apple.com/documentation/bundleresources/entitlements/com.apple.security.application-groups)。

@@ -27,7 +27,7 @@ TASK_SOURCE_ARCHIVE="TwinSpace-$TASK_VERSION-source.zip"
 # Package only project sources and public documentation, never local build/test data.
 TASK_SOURCE="$TASK_STAGE/TwinSpace-$TASK_VERSION-source"
 mkdir -p "$TASK_SOURCE"
-/usr/bin/tar --exclude='.DS_Store' -cf - Package.swift README.md VALIDATION.md CHANGELOG.md .gitignore Sources Tests Resources scripts docs .github |
+/usr/bin/tar --exclude='.DS_Store' --exclude='__pycache__' --exclude='*.pyc' -cf - Package.swift README.md VALIDATION.md CHANGELOG.md .gitignore Sources Tests Resources scripts docs .github |
     /usr/bin/tar -xf - -C "$TASK_SOURCE"
 /usr/bin/ditto -c -k --keepParent "$TASK_SOURCE" "dist/$TASK_SOURCE_ARCHIVE"
 cp README.md dist/README.zh-CN.md

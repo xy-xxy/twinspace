@@ -83,7 +83,7 @@ struct ContentView: View {
                 }
             }.padding(18)
             Divider()
-            Text("0.4.1 · 测试版").font(.caption2).foregroundStyle(.tertiary).padding(18)
+            Text("\(AppModel.appVersion) · 测试版").font(.caption2).foregroundStyle(.tertiary).padding(18)
         }.background(Color(nsColor: .controlBackgroundColor))
     }
 
