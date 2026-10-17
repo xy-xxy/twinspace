@@ -64,7 +64,8 @@ class ReleaseTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.dist = self.root / 'dist'
         (self.root / 'Resources').mkdir()
-        self.info = dict(CFBundleIdentifier='io.local.appdual', CFBundleShortVersionString='0.4.2', CFBundleVersion='8')
+        self.info = dict(CFBundleIdentifier='io.local.appdual', CFBundleShortVersionString='0.4.2', CFBundleVersion='8',
+                         CFBundleName='TwinSpace', CFBundleDisplayName='TwinSpace')
         (self.root / 'Resources/Info.plist').write_bytes(plistlib.dumps(self.info))
         self.plan = release.prepare(self.root, 'v0.4.2', self.dist, COMMIT)
         with zipfile.ZipFile(self.dist / self.plan['assets'][0], 'w') as z:
@@ -94,7 +95,9 @@ class ReleaseTests(unittest.TestCase):
         self.assertTrue(release.prepare(self.root, 'v1.0.0-rc.1', self.dist, COMMIT)['prerelease'])
         notes = (self.dist / 'release-notes.md').read_text()
         self.assertIn('v1.0.0-rc.1', notes)
-        self.assertIn('未经 Apple 公证', notes)
+        self.assertIn('not notarized by Apple', notes)
+        self.assertIn('TwinSpace.app', notes)
+        self.assertNotRegex(notes, r'[\u3400-\u9fff]')
         self.assertIn(COMMIT, notes)
 
     def test_tag_specific_notes_override_base_notes(self):
@@ -134,12 +137,25 @@ class ReleaseTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             release.verify_assets(self.dist, self.plan)
 
+    def test_installer_rejects_stale_branding_even_with_updated_checksums(self):
+        cases = [('OldName.app', self.info),
+                 ('TwinSpace.app', dict(self.info, CFBundleName='OldName')),
+                 ('TwinSpace.app', dict(self.info, CFBundleDisplayName='OldName'))]
+        for bundle, info in cases:
+            with self.subTest(bundle=bundle, info=info):
+                with zipfile.ZipFile(self.dist / self.plan['assets'][0], 'w') as z:
+                    z.writestr(f'TwinSpace/{bundle}/Contents/Info.plist', plistlib.dumps(info))
+                self.update_checksums()
+                with self.assertRaisesRegex(ValueError, 'must be named TwinSpace'):
+                    release.verify_assets(self.dist, self.plan)
+
     def test_new_release_is_published_only_after_verified_uploads(self):
         self.github.annotated = True
         release.publish(self.github, self.plan, self.dist)
         self.assertEqual(self.github.events, ['create-draft', 'upload', 'publish'])
         self.assertFalse(self.github.existing['draft'])
         self.assertEqual(self.github.existing['make_latest'], 'false')
+        self.assertEqual(self.github.existing['name'], 'TwinSpace v0.4.2 Beta')
 
     def test_failed_upload_leaves_draft_and_retry_completes(self):
         self.github.fail_upload = True

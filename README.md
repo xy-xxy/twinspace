@@ -6,28 +6,30 @@ Each application has one managed copy. Copies have a blue **2** badge on their i
 
 ## Download
 
-Get **v0.4.1 Beta** from [Releases](https://github.com/xy-xxy/twinspace/releases).
+Get **v0.4.2 Beta** from [Releases](https://github.com/xy-xxy/twinspace/releases).
 
-- **TwinSpace-0.4.1-macos-universal.zip** — the macOS app, usage instructions, and validation record.
-- **TwinSpace-0.4.1-source.zip** — source code, tests, and build scripts.
+- **TwinSpace-0.4.2-macos-universal.zip** — the macOS app, usage instructions, and validation record.
+- **TwinSpace-0.4.2-source.zip** — source code, tests, and build scripts.
 - **README.md** — this English guide.
 - **VALIDATION.zh-CN.md** — validation details in Chinese.
 - **SHA256SUMS.txt** — SHA-256 checksums for the release files.
 
 Requires macOS 13 or later. The Universal binary includes Apple Silicon and Intel architectures. Interactive testing was performed on Apple Silicon with macOS 27.0.1; Intel hardware has not yet been verified. The app uses an ad-hoc local signature and is not notarized by Apple.
 
-This version improves source integrity diagnostics, automatic adaptation, and copy removal. See the [changelog](CHANGELOG.md) for previous updates.
+This version uses the TwinSpace name throughout the app and installer, and provides English release notes. Existing application entries, copy identities, and data locations are preserved. See the [changelog](CHANGELOG.md) for previous updates.
 
 ## Installation and use
 
 The app currently has a Chinese interface. Button labels below include English translations.
 
-1. Download and extract `TwinSpace-0.4.1-macos-universal.zip`, then drag `双栖.app` into Applications. When building from source, the app is available at `dist/双栖.app`.
+1. Download and extract `TwinSpace-0.4.2-macos-universal.zip`, then drag `TwinSpace.app` into Applications. When building from source, the app is available at `dist/TwinSpace.app`.
 2. This is an **ad-hoc signed, unnotarized beta**. macOS may block the first launch of a downloaded copy. After checking its source, follow the system's instructions in **System Settings → Privacy & Security**. You do not need to disable Gatekeeper or SIP.
 3. Click **Add App** (`添加应用…`) and select the original `.app`. You can select multiple apps. Selecting a new location for an existing bundle identifier updates its entry.
 4. Click **Create and Open Copy** (`创建并打开副本`) and choose what to copy. **Application Only** (`仅复制应用程序`) is the default: it preserves an existing copy's data and starts with an empty data space when creating a copy for the first time. Allow space for the application plus approximately 512 MB; importing data also requires space for snapshots and backups.
 5. Sign in separately inside the copied app if needed. TwinSpace observes startup for 20 seconds, but successful startup does not verify account login. It does not inspect account details, messages, or login credentials.
 6. After updating the original app, select **Rebuild Copy** (`重建副本…`) and choose **Application Only** to update the program while preserving its data. Rebuilding also opens the copy. Its identity and data locations remain stable.
+
+When upgrading from an earlier release, quit TwinSpace and remove the previous manager app from Applications before installing `TwinSpace.app`. Removing the manager bundle preserves your application list, managed copies, and their data.
 
 TwinSpace manages at most one copy per application. Opening a running copy activates its existing window. Cancelling a build removes that build's temporary files; cancelling startup observation does not close the application.
 
@@ -91,7 +93,7 @@ Requires macOS and Swift 5.9 or later through Apple Command Line Tools or Xcode.
 ```sh
 ./scripts/test.sh          # Core checks; works without XCTest
 ./scripts/build.sh         # Build both architectures, generate icons, sign, and package
-open dist/双栖.app
+open dist/TwinSpace.app
 ```
 
 Build output includes the `.app`, installer and source ZIPs, SHA-256 checksums, and documentation. The scripts do not access an Apple developer account or perform notarization.
@@ -111,7 +113,7 @@ swift run DualProbe observe /Applications/Example.app "$HOME/Applications/<copy-
 
 Pushing a `vX.Y.Z` tag triggers the [Release workflow](https://github.com/xy-xxy/twinspace/actions/workflows/release.yml), which tests, builds, verifies, and publishes the release. The tag must match the application version in `Resources/Info.plist`. Versions below `1.0.0` and tags with prerelease suffixes are marked as prereleases.
 
-A manual workflow run verifies packaging without publishing. See the [release guide](docs/RELEASING.md) for version updates, tag formats, release notes, and retries. Use English Git commit messages.
+A manual workflow run verifies packaging without publishing. See the [release guide](docs/RELEASING.md) for version updates, tag formats, release notes, and retries. Use English Git commit messages and release notes. Release titles and fallback notes are generated in English.
 
 ## References
 

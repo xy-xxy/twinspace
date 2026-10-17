@@ -192,7 +192,7 @@ public final class DataCopyTransaction {
                 }
                 let storage = folder.standardizedFileURL.path.lowercased()
                 guard a != storage, !storage.hasPrefix(a + "/"), !a.hasPrefix(storage + "/") else {
-                    throw DualError.message("数据目录包含双栖的备份目录，请选择应用专用的数据目录。")
+                    throw DualError.message("数据目录包含TwinSpace的备份目录，请选择应用专用的数据目录。")
                 }
             }
             let newURL = item.source == nil ? nil : folder.appendingPathComponent("new-\(index)")
@@ -239,7 +239,7 @@ public final class DataCopyTransaction {
                 try Self.restore(journal, home: home, commands: SystemCommands(cancellable: false), checkStopped: checkStopped)
                 journal.state = "rolled-back"; try save(); try fm.removeItem(at: pending)
             } catch {
-                throw DualError.message("复制未完成，暂未恢复。请退出原版和副本后，在双栖中重试。备份位于：\(folder.path)")
+                throw DualError.message("复制未完成，暂未恢复。请退出原版和副本后，在TwinSpace中重试。备份位于：\(folder.path)")
             }
             throw error
         }

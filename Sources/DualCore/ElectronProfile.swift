@@ -81,7 +81,7 @@ public struct ElectronLaunchConfiguration: Codable, Sendable {
               DataCopyPaths.safeSegment(executable),
               DataCopyPaths.safeSegment(packageName), !packageName.contains("\\"),
               root.isFileURL, root.path.hasSuffix("/Library/Application Support/AppDual/Electron/" + cloneID),
-              !root.pathComponents.contains("..") else { throw DualError.message("副本的启动配置无效，请在双栖中重建副本。") }
+              !root.pathComponents.contains("..") else { throw DualError.message("副本的启动配置无效，请在TwinSpace中重建副本。") }
     }
 
     public func prepareDirectories(includeTemporary: Bool = false) throws {

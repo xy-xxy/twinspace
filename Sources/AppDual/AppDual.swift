@@ -14,7 +14,7 @@ struct AppDual: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model = AppModel()
     var body: some Scene {
-        Window("双栖", id: "main") {
+        Window("TwinSpace", id: "main") {
             ContentView(model: model)
                 .frame(minWidth: 830, minHeight: 600)
                 .onReceive(NotificationCenter.default.publisher(for: NSApplication.willTerminateNotification)) { _ in model.cancel() }

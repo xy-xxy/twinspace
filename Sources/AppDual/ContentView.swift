@@ -51,8 +51,8 @@ struct ContentView: View {
             HStack(spacing: 10) {
                 Image(systemName: "square.on.square.fill").font(.system(size: 23)).foregroundStyle(accent)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("双栖").font(.headline)
-                    Text("TWINSPACE").font(.system(size: 9, weight: .medium, design: .rounded)).tracking(2).foregroundStyle(.secondary)
+                    Text("TwinSpace").font(.headline)
+                    Text("APP DUPLICATOR").font(.system(size: 9, weight: .medium, design: .rounded)).tracking(2).foregroundStyle(.secondary)
                 }
             }.padding(22)
             HStack {

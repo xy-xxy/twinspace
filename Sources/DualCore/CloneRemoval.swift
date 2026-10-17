@@ -22,7 +22,7 @@ public enum CloneRemoval {
                   let manifest = try? CloneManifest.read(at: clone), manifest.sourceID == record.bundleID,
                   manifest.cloneID == "io.local.appdual.clone." + digest(record.bundleID).prefix(20),
                   clone.resolvingSymlinksInPath().path != URL(fileURLWithPath: record.sourcePath).resolvingSymlinksInPath().path else {
-                throw DualError.message("目标位置不是双栖创建的对应副本，已停止移除。请先在访达中检查该文件。")
+                throw DualError.message("目标位置不是TwinSpace创建的对应副本，已停止移除。请先在访达中检查该文件。")
             }
             guard !isRunning(clone) else { throw DualError.message("副本刚被打开，请先退出后再移除。") }
             try delete(clone)

@@ -14,7 +14,7 @@ for TASK_ARCH in arm64 x86_64; do
 done
 swift build -c release --product DualProbe
 TASK_BIN_DIR="$(swift build -c release --show-bin-path)"
-TASK_APP="$TASK_STAGE/双栖.app"
+TASK_APP="$TASK_STAGE/TwinSpace.app"
 mkdir -p "$TASK_APP/Contents/MacOS" "$TASK_APP/Contents/Resources"
 /usr/bin/lipo -create "$TASK_STAGE/AppDual-arm64" "$TASK_STAGE/AppDual-x86_64" -output "$TASK_APP/Contents/MacOS/AppDual"
 cp Resources/Info.plist "$TASK_APP/Contents/Info.plist"
@@ -26,9 +26,9 @@ for TASK_ARCH in arm64 x86_64; do
 done
 
 # Only generated deliverables inside this project's dist directory are replaced.
-if [ -d dist/双栖.app ]; then
-    mv dist/双栖.app "$TASK_STAGE/previous-bundle"
+if [ -d dist/TwinSpace.app ]; then
+    mv dist/TwinSpace.app "$TASK_STAGE/previous-bundle"
 fi
-mv "$TASK_APP" dist/双栖.app
+mv "$TASK_APP" dist/TwinSpace.app
 "$TASK_ROOT/scripts/package.sh"
-printf '\n已生成：%s/dist/双栖.app\n' "$TASK_ROOT"
+printf '\nBuilt: %s/dist/TwinSpace.app\n' "$TASK_ROOT"

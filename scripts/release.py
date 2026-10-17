@@ -47,16 +47,22 @@ def prepare(root, tag, destination, commit):
         if not notes:
             raise ValueError("Release notes must not be empty.")
     else:
-        notes = f"""## 双栖 TwinSpace {tag}
+        notes = f"""## TwinSpace {tag}
 
-原生 macOS 应用双开工具。安装包同时包含 Apple Silicon 和 Intel 架构，最低 macOS 13。
+TwinSpace is a native macOS app duplicator. The Universal binary includes Apple Silicon
+and Intel architectures and requires macOS 13 or later.
 
-下载 `TwinSpace-{version}-macos-universal.zip` 并解压，将“双栖.app”拖到“应用程序”。
-本地签名，未经 Apple 公证；首次打开请按 macOS 的隐私与安全性提示操作。
+Download and extract `TwinSpace-{version}-macos-universal.zip`, then drag `TwinSpace.app`
+into Applications. Quit and remove the previous manager app before installing the update;
+your application list, managed copies, and their data are preserved.
+The app uses an ad-hoc local signature and is not notarized by Apple. Follow macOS
+Privacy & Security instructions if the first launch is blocked after checking its source.
 
-附件包含安装包、源码包、英文 README、验证记录及 SHA-256 校验值。
-功能变化见 [更新日志](https://github.com/{REPOSITORY}/blob/{tag}/CHANGELOG.md)，
-已验证范围见 [验证记录](https://github.com/{REPOSITORY}/blob/{tag}/VALIDATION.md)。
+Assets include the installer, source code, English README, Chinese validation record,
+and SHA-256 checksums. The app interface remains Chinese.
+See the [changelog](https://github.com/{REPOSITORY}/blob/{tag}/CHANGELOG.md) for changes
+and the [validation record](https://github.com/{REPOSITORY}/blob/{tag}/VALIDATION.md)
+for the tested scope. Intel hardware and complete account workflows are not fully verified.
 """
     destination.mkdir(parents=True, exist_ok=True)
     (destination / "release-plan.json").write_text(json.dumps(plan, indent=2) + "\n", encoding="utf-8")
@@ -115,6 +121,10 @@ def verify_assets(directory, plan):
                 if len(plists) != 1:
                     raise ValueError("Installer must contain one TwinSpace application.")
                 info = plistlib.loads(archive.read(plists[0]))
+                if (Path(plists[0]).parts[-3] != "TwinSpace.app"
+                        or info.get("CFBundleName") != "TwinSpace"
+                        or info.get("CFBundleDisplayName") != "TwinSpace"):
+                    raise ValueError("Installer application must be named TwinSpace.")
                 if (info.get("CFBundleIdentifier") != "io.local.appdual"
                         or info.get("CFBundleShortVersionString") != plan["version"]
                         or info.get("CFBundleVersion") != plan["build"]):
@@ -188,10 +198,10 @@ def publish(github, plan, directory):
             print(f"Release already published; leaving its assets unchanged: {existing['html_url']}")
             return
     else:
-        suffix = " 测试版" if plan["prerelease"] else ""
+        suffix = " Beta" if plan["prerelease"] else ""
         existing = github.api(endpoint, "POST", {
             "tag_name": plan["tag"], "target_commitish": plan["commit"],
-            "name": f"双栖 TwinSpace {plan['tag']}{suffix}",
+            "name": f"TwinSpace {plan['tag']}{suffix}",
             "body": (directory / "release-notes.md").read_text(encoding="utf-8"),
             "draft": True, "prerelease": plan["prerelease"]})
     github.upload(plan["tag"], [directory / name for name in plan["assets"]])

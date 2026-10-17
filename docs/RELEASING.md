@@ -16,7 +16,7 @@
 
 - 修改 `Resources/Info.plist` 中的 `CFBundleShortVersionString` 为 `0.4.2`，递增 `CFBundleVersion`。界面、诊断和打包脚本从该文件获取版本号。
 - 更新 `CHANGELOG.md`、README 的下载版本和 `VALIDATION.md`，只记录实际通过的验证。
-- 建议编写 `docs/releases/v0.4.2.md`。有该文件时作为 Release 正文；没有时自动生成安装、下载、验证范围与更新日志链接。
+- 使用英文编写 `docs/releases/v0.4.2.md`，与英文 README 保持一致。有该文件时作为 Release 正文；没有时自动生成安装、下载、验证范围与更新日志链接。
 - 提交信息使用英文，先推送代码，再推送标签：
 
 ```sh
@@ -31,7 +31,7 @@ git push origin v0.4.2
 
 `0.x` 版本及带 alpha / beta / rc 后缀的标签发布为 Pre-release。`1.0.0` 起不带后缀的标签发布为正式版本。标签版本与应用不一致时会停止，不会发布名称与内容不符的安装包。
 
-预发布说明优先使用同名文件，例如 `docs/releases/v0.4.2-beta.1.md`；否则使用 `docs/releases/v0.4.2.md`，再否则使用默认正文。
+预发布说明优先使用同名文件，例如 `docs/releases/v0.4.2-beta.1.md`；否则使用 `docs/releases/v0.4.2.md`，再否则使用默认英文正文。Release 标题统一使用 TwinSpace。
 
 ## 附件与验证
 
@@ -61,7 +61,7 @@ gh workflow run release.yml --repo xy-xxy/twinspace --ref main
 
 ```sh
 python3 -m unittest discover -s Tests/ReleaseTests -v
-python3 scripts/release.py prepare --tag v0.4.1
+python3 scripts/release.py prepare --tag v0.4.2
 ./scripts/build.sh
 python3 scripts/release.py verify
 ```

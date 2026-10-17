@@ -206,7 +206,7 @@ final class AppModel: ObservableObject {
     }
 
     func copyDiagnostics() {
-        let text = "双栖 TwinSpace \(Self.appVersion) 测试版\n系统：\(ProcessInfo.processInfo.operatingSystemVersionString)\n原版：\(source?.name ?? "无") \(source?.version ?? "") (\(source?.build ?? ""))\n标识：\(source?.bundleID ?? "无")\n状态：\(status)\n\(diagnostics)"
+        let text = "TwinSpace \(Self.appVersion) 测试版\n系统：\(ProcessInfo.processInfo.operatingSystemVersionString)\n原版：\(source?.name ?? "无") \(source?.version ?? "") (\(source?.build ?? ""))\n标识：\(source?.bundleID ?? "无")\n状态：\(status)\n\(diagnostics)"
         let privacyFiltered = text.replacingOccurrences(of: FileManager.default.homeDirectoryForCurrentUser.path, with: "~")
         NSPasteboard.general.clearContents(); NSPasteboard.general.setString(privacyFiltered, forType: .string)
     }

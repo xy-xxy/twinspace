@@ -4,7 +4,7 @@ TASK_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$TASK_ROOT"
 TASK_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Resources/Info.plist)"
 [[ "$TASK_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Invalid release version' >&2; exit 1; }
-TASK_APP="dist/双栖.app"
+TASK_APP="dist/TwinSpace.app"
 TASK_APP_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$TASK_APP/Contents/Info.plist")"
 [[ "$TASK_APP_VERSION" == "$TASK_VERSION" ]] || { echo 'Build the current version before packaging' >&2; exit 1; }
 /usr/bin/codesign --verify --deep --strict "$TASK_APP"
@@ -14,12 +14,12 @@ done
 
 mkdir -p .build
 TASK_STAGE="$(mktemp -d "$TASK_ROOT/.build/release.XXXXXX")"
-TASK_RELEASE="$TASK_STAGE/双栖测试版"
+TASK_RELEASE="$TASK_STAGE/TwinSpace"
 mkdir -p "$TASK_RELEASE"
-/usr/bin/ditto --norsrc --noextattr "$TASK_APP" "$TASK_RELEASE/双栖.app"
+/usr/bin/ditto --norsrc --noextattr "$TASK_APP" "$TASK_RELEASE/TwinSpace.app"
 cp README.md "$TASK_RELEASE/README.md"
-cp VALIDATION.md "$TASK_RELEASE/验证记录.md"
-cp CHANGELOG.md "$TASK_RELEASE/更新日志.md"
+cp VALIDATION.md "$TASK_RELEASE/VALIDATION.md"
+cp CHANGELOG.md "$TASK_RELEASE/CHANGELOG.md"
 TASK_BINARY="TwinSpace-$TASK_VERSION-macos-universal.zip"
 TASK_SOURCE_ARCHIVE="TwinSpace-$TASK_VERSION-source.zip"
 /usr/bin/ditto -c -k --sequesterRsrc --keepParent "$TASK_RELEASE" "dist/$TASK_BINARY"
@@ -32,7 +32,6 @@ mkdir -p "$TASK_SOURCE"
 /usr/bin/ditto -c -k --keepParent "$TASK_SOURCE" "dist/$TASK_SOURCE_ARCHIVE"
 cp README.md dist/README.md
 cp VALIDATION.md dist/VALIDATION.zh-CN.md
-cp VALIDATION.md dist/验证记录.md
 (
     cd dist
     /usr/bin/shasum -a 256 "$TASK_BINARY" "$TASK_SOURCE_ARCHIVE" README.md VALIDATION.zh-CN.md > SHA256SUMS.txt
